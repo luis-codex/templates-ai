@@ -1,22 +1,22 @@
 "use client";
+import { cn } from "@/shared/lib/utils";
 import {
-    ArrowDownIcon,
-    Bot,
-    ChevronDown,
-    Info,
-    Lightbulb,
-    Menu,
-    Mic,
-    Paperclip,
-    Send,
-    X,
+  ArrowDownIcon,
+  Bot,
+  ChevronDown,
+  Info,
+  Lightbulb,
+  Menu,
+  Mic,
+  Paperclip,
+  Send,
+  X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { useShallow } from "zustand/shallow";
 import { ProviderChat, useChatContext } from "./Provider";
 import { useChatStore } from "./store";
-import { cn } from "@/shared/lib/utils";
 
 const FloatingButton: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useChatStore(
@@ -185,8 +185,8 @@ const ChatMessagesContent: React.FC = () => {
     <StickToBottom className="flex-1 flex flex-col">
       <StickToBottom.Content className="flex-1 overflow-y-auto px-4 border-b max-h-96 scrollbar-thin relative">
         <ChatMessages />
-        <ConversationScrollButton />
       </StickToBottom.Content>
+      <ConversationScrollButton />
     </StickToBottom>
   );
 };
@@ -458,7 +458,7 @@ const ChatInterface: React.FC = () => {
               "linear-gradient(135deg, rgba(59, 130, 246, 0.01), transparent, rgba(37, 99, 235, 0.02))",
           }}
         ></div>
-      </div>{" "}
+      </div>
     </div>
   );
 };

@@ -294,12 +294,12 @@ const SendButton: React.FC = () => {
       onClick={() => {
         sendMessage({
           text: message,
-          files: droppedFiles.map((file) => ({
-            type: "file",
-            mediaType: file.type,
-            url: URL.createObjectURL(file),
-            file,
-          })),
+          // files: droppedFiles.map((file) => ({
+          //   type: "file",
+          //   mediaType: file.type,
+          //   url: URL.createObjectURL(file),
+          //   file,
+          // })),
         });
         handleSend();
       }}

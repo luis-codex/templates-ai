@@ -12,12 +12,19 @@ import {
   Send,
   X,
 } from "lucide-react";
-import React, { ComponentProps, memo, useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  ComponentProps,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Streamdown } from "streamdown";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { useShallow } from "zustand/shallow";
 import { ProviderChat, useChatContext } from "./Provider";
 import { useChatStore } from "./store";
-import { Streamdown } from "streamdown";
 
 const FloatingButton: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useChatStore(
@@ -141,14 +148,16 @@ const ConversationScrollButton: React.FC = () => {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
 
   const handleScrollToBottom = useCallback(() => {
-    scrollToBottom();
+    scrollToBottom({
+      duration  : 200,
+    });
   }, [scrollToBottom]);
 
   return (
     !isAtBottom && (
       <button
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-gradient-to-r from-zinc-800 to-zinc-700 p-2 shadow-xl z-10 border"
+          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-zinc-800 p-2 shadow-xl z-10 border"
         )}
         onClick={handleScrollToBottom}
         type="button"
@@ -165,13 +174,13 @@ export const Response = memo(
   ({ className, ...props }: ResponseProps) => (
     <Streamdown
       className={cn(
-        'size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
-        className,
+        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        className
       )}
       {...props}
     />
   ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children,
+  (prevProps, nextProps) => prevProps.children === nextProps.children
 );
 
 const ChatMessages: React.FC = () => {
@@ -180,7 +189,8 @@ const ChatMessages: React.FC = () => {
   return messages.map((message) => (
     <div
       className={cn("px-6 py-4", {
-        "ml-auto text-muted-foreground rounded-2xl max-w-3/4 w-fit": message.role === "user",
+        "ml-auto text-muted-foreground rounded-2xl max-w-3/4 w-fit":
+          message.role === "user",
       })}
       key={message.id}
     >

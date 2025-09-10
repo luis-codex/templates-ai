@@ -2,14 +2,14 @@
 import { generateZustandContext } from "@/shared/hooks/generateZustandContext";
 import { cn } from "@/shared/lib/utils";
 import {
-    File,
-    Globe,
-    Image,
-    Lightbulb,
-    Mic,
-    Paperclip,
-    Send,
-    X,
+  File,
+  Globe,
+  Image,
+  Lightbulb,
+  Mic,
+  Paperclip,
+  Send,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion, Variants } from "motion/react";
 import * as React from "react";
@@ -31,6 +31,8 @@ type FileItem = {
   size: number;
   type: string;
   file: File;
+  arrayBuffer?: ArrayBuffer;
+  uint8Array?: Uint8Array;
   preview?: string;
 };
 
@@ -53,7 +55,7 @@ type ChatInputStore = {
   toggleThink: () => void;
   toggleDeepSearch: () => void;
   cyclePlaceholder: () => void;
-  addFiles: (newFiles: FileList) => void;
+  addFiles: (newFiles: FileList) => Promise<void>;
   removeFile: (fileId: string) => void;
   reset: () => void;
 };
@@ -110,13 +112,7 @@ const AnimatedPlaceholder = () => {
         {showPlaceholder && !isActive && !inputValue && (
           <motion.span
             key={placeholderIndex}
-            className="absolute will-change-transform left-0 top-1/2 -translate-y-1/2 text-gray-400 select-none pointer-events-none"
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              zIndex: 0,
-            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 select-none pointer-events-none whitespace-nowrap overflow-hidden text-ellipsis z-0"
             variants={placeholderContainerVariants}
             initial="initial"
             animate="animate"
@@ -126,7 +122,7 @@ const AnimatedPlaceholder = () => {
               <motion.span
                 key={i}
                 variants={letterVariants}
-                className="will-change-transform inline-block"
+                className="inline-block"
               >
                 {char === " " ? "\u00A0" : char}
               </motion.span>
@@ -138,6 +134,16 @@ const AnimatedPlaceholder = () => {
   );
 };
 
+const getFileInfo = (file: FileItem) => {
+  const info = {
+    hasArrayBuffer: !!file.arrayBuffer,
+    hasUint8Array: !!file.uint8Array,
+    byteLength: file.arrayBuffer?.byteLength || 0,
+    firstBytes: file.uint8Array?.slice(0, 16) || null,
+  };
+  return info;
+};
+
 const FileBadge = ({
   file,
   onRemove,
@@ -146,6 +152,7 @@ const FileBadge = ({
   onRemove: () => void;
 }) => {
   const isImage = file.type.startsWith("image/");
+  const fileInfo = getFileInfo(file);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -180,11 +187,22 @@ const FileBadge = ({
       )}
 
       <div className="flex flex-col min-w-0">
-        <span className="text-gray-900 font-medium truncate max-w-[150px]">
-          {file.name}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-gray-900 font-medium truncate max-w-[150px]">
+            {file.name}
+          </span>
+          {fileInfo.hasArrayBuffer && (
+            <span
+              className="inline-block w-2 h-2 bg-green-500 rounded-full"
+              title="File data ready (ArrayBuffer loaded)"
+            />
+          )}
+        </div>
         <span className="text-gray-500 text-xs">
           {formatFileSize(file.size)}
+          {fileInfo.hasArrayBuffer && (
+            <span className="ml-1 text-green-600">• Processed</span>
+          )}
         </span>
       </div>
 
@@ -275,11 +293,12 @@ const InputControls = () => {
       />
       <button
         onClick={handleAttachClick}
-        className={`p-3 rounded-full transition relative ${
+        className={cn(
+          "p-3 rounded-full transition relative",
           files.length > 0
             ? "bg-blue-50 hover:bg-blue-100"
             : "hover:bg-gray-100"
-        }`}
+        )}
         title="Attach file"
         type="button"
         tabIndex={-1}
@@ -418,11 +437,12 @@ const ExpandedControls = () => {
         />
 
         <motion.button
-          className={`flex items-center px-4 gap-1 py-2 rounded-full transition font-medium whitespace-nowrap overflow-hidden justify-start ${
+          className={cn(
+            "flex items-center px-4 gap-1 py-2 rounded-full transition font-medium whitespace-nowrap overflow-hidden justify-start",
             deepSearchActive
               ? "bg-blue-600/10 outline outline-blue-600/60 text-blue-950"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          )}
           title="Deep Search"
           type="button"
           onClick={(e) => {
@@ -499,6 +519,16 @@ const ChatInput = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [inputValue, setIsActive]);
+
+  useEffect(() => {
+    return () => {
+      files.forEach((file) => {
+        if (file.preview && file.preview.startsWith("blob:")) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, [files]);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -638,36 +668,48 @@ const ProviderChatInput = ({ children }: { children: React.ReactNode }) => {
           }, 400);
         },
 
-        addFiles: (newFiles: FileList) => {
+        addFiles: async (newFiles: FileList) => {
           const currentState = get();
           const fileItems: FileItem[] = [];
 
-          Array.from(newFiles).forEach((file) => {
-            const fileItem: FileItem = {
-              id: `${Date.now()}-${file.name}-${Math.random()
-                .toString(36)
-                .substr(2, 9)}`,
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              file,
-            };
+          for (const file of Array.from(newFiles)) {
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
 
-            if (file.type.startsWith("image/")) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const result = e.target?.result as string;
-                set((state: ChatInputStore) => ({
-                  files: state.files.map((f) =>
-                    f.id === fileItem.id ? { ...f, preview: result } : f
-                  ),
-                }));
+              const fileItem: FileItem = {
+                id: `${Date.now()}-${file.name}-${Math.random()
+                  .toString(36)
+                  .substr(2, 9)}`,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                file,
+                arrayBuffer,
+                uint8Array,
               };
-              reader.readAsDataURL(file);
-            }
 
-            fileItems.push(fileItem);
-          });
+              if (file.type.startsWith("image/")) {
+                const blob = new Blob([uint8Array], { type: file.type });
+                fileItem.preview = URL.createObjectURL(blob);
+              }
+
+              fileItems.push(fileItem);
+            } catch (error) {
+              console.error(`Error processing file ${file.name}:`, error);
+
+              const fileItem: FileItem = {
+                id: `${Date.now()}-${file.name}-${Math.random()
+                  .toString(36)
+                  .substr(2, 9)}`,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                file,
+              };
+              fileItems.push(fileItem);
+            }
+          }
 
           set({
             files: [...currentState.files, ...fileItems],
@@ -676,12 +718,31 @@ const ProviderChatInput = ({ children }: { children: React.ReactNode }) => {
         },
 
         removeFile: (fileId: string) => {
-          set((state: ChatInputStore) => ({
-            files: state.files.filter((file) => file.id !== fileId),
-          }));
+          set((state: ChatInputStore) => {
+            const fileToRemove = state.files.find((file) => file.id === fileId);
+
+            if (
+              fileToRemove?.preview &&
+              fileToRemove.preview.startsWith("blob:")
+            ) {
+              URL.revokeObjectURL(fileToRemove.preview);
+            }
+
+            return {
+              files: state.files.filter((file) => file.id !== fileId),
+            };
+          });
         },
 
-        reset: () =>
+        reset: () => {
+          const currentState = get();
+
+          currentState.files.forEach((file) => {
+            if (file.preview && file.preview.startsWith("blob:")) {
+              URL.revokeObjectURL(file.preview);
+            }
+          });
+
           set({
             inputValue: "",
             isActive: false,
@@ -690,7 +751,8 @@ const ProviderChatInput = ({ children }: { children: React.ReactNode }) => {
             placeholderIndex: 0,
             showPlaceholder: true,
             files: [],
-          }),
+          });
+        },
       })}
     >
       {children}

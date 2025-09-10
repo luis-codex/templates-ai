@@ -1,6 +1,6 @@
 import { UIMessage, useChat, UseChatHelpers } from "@ai-sdk/react";
 import { UIDataTypes, UITools } from "ai";
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 
 type StoreChat = UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>;
 
@@ -12,7 +12,7 @@ export const ProviderChat: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useChatContext = () => {
-  const context = useContext(Context);
+  const context = use(Context);
   if (!context) {
     throw new Error("useChatContext must be used within a ChatProvider");
   }

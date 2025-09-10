@@ -168,7 +168,7 @@ const ConversationScrollButton: React.FC = () => {
 
 type ResponseProps = ComponentProps<typeof Streamdown>;
 
-export const Response = memo(
+ const Response = memo(
   ({ className, ...props }: ResponseProps) => (
     <Streamdown
       className={cn(
@@ -207,7 +207,7 @@ const ChatMessages: React.FC = () => {
 const ChatMessagesContent: React.FC = () => {
   return (
     <StickToBottom
-      className="h-96 overflow-y-auto px-4 border-b max-h-96 scrollbar-thin relative"
+      className="h-[50dvh] overflow-y-auto px-4 border-b scrollbar-thin relative"
       resize="smooth"
       initial="instant"
       damping={0.1}
@@ -286,13 +286,20 @@ const AttachmentButtons: React.FC = () => {
 const SendButton: React.FC = () => {
   const handleSend = useChatStore((store) => store.handleSend);
   const message = useChatStore((store) => store.message);
+  const droppedFiles = useChatStore((store) => store.droppedFiles);
+
   const { sendMessage } = useChatContext();
   return (
     <button
       onClick={() => {
         sendMessage({
           text: message,
-          files: [],
+          files: droppedFiles.map((file) => ({
+            type: "file",
+            mediaType: file.type,
+            url: URL.createObjectURL(file),
+            file,
+          })),
         });
         handleSend();
       }}

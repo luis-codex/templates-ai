@@ -155,7 +155,7 @@ const ConversationScrollButton: React.FC = () => {
     !isAtBottom && (
       <button
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-zinc-800 p-2 shadow-xl z-10 border"
+          "absolute cursor-pointer bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-zinc-800 p-2 shadow-xl z-10 border"
         )}
         onClick={handleScrollToBottom}
         type="button"
@@ -209,7 +209,7 @@ const ChatMessagesContent: React.FC = () => {
     <StickToBottom
       className="h-96 overflow-y-auto px-4 border-b max-h-96 scrollbar-thin relative"
       resize="smooth"
-      initial="smooth"
+      initial="instant"
       damping={0.1}
     >
       <StickToBottom.Content>

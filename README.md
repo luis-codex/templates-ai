@@ -1,5 +1,9 @@
 # 🤖 AI Chat Templates Collection
 
+
+https://github.com/user-attachments/assets/a2c2437d-5006-4b0a-8716-8da04d39a2aa
+
+
 > **Enterprise-Ready AI Interface Templates for Modern Web Applications**
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)

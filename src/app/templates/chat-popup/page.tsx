@@ -12,11 +12,12 @@ import {
   Send,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { ComponentProps, memo, useCallback, useEffect, useRef, useState } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { useShallow } from "zustand/shallow";
 import { ProviderChat, useChatContext } from "./Provider";
 import { useChatStore } from "./store";
+import { Streamdown } from "streamdown";
 
 const FloatingButton: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useChatStore(
@@ -147,7 +148,7 @@ const ConversationScrollButton: React.FC = () => {
     !isAtBottom && (
       <button
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full"
+          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-gradient-to-r from-zinc-800 to-zinc-700 p-2 shadow-xl z-10 border"
         )}
         onClick={handleScrollToBottom}
         type="button"
@@ -158,20 +159,35 @@ const ConversationScrollButton: React.FC = () => {
   );
 };
 
+type ResponseProps = ComponentProps<typeof Streamdown>;
+
+export const Response = memo(
+  ({ className, ...props }: ResponseProps) => (
+    <Streamdown
+      className={cn(
+        'size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
+        className,
+      )}
+      {...props}
+    />
+  ),
+  (prevProps, nextProps) => prevProps.children === nextProps.children,
+);
+
 const ChatMessages: React.FC = () => {
   const { messages } = useChatContext();
 
   return messages.map((message) => (
     <div
-      className={cn("px-6 py-4 w-3/4", {
-        "ml-auto bg-zinc-800/50 rounded-2xl": message.role === "user",
+      className={cn("px-6 py-4", {
+        "ml-auto text-muted-foreground rounded-2xl max-w-3/4 w-fit": message.role === "user",
       })}
       key={message.id}
     >
       {message.parts.map((part, index) => {
         switch (part.type) {
           case "text":
-            return <p key={index}>{part.text}</p>;
+            return <Response key={index}>{part.text}</Response>;
           default:
             return null;
         }
@@ -182,8 +198,13 @@ const ChatMessages: React.FC = () => {
 
 const ChatMessagesContent: React.FC = () => {
   return (
-    <StickToBottom className="flex-1 flex flex-col">
-      <StickToBottom.Content className="flex-1 overflow-y-auto px-4 border-b max-h-96 scrollbar-thin relative">
+    <StickToBottom
+      className="h-96 overflow-y-auto px-4 border-b max-h-96 scrollbar-thin relative"
+      resize="smooth"
+      initial="smooth"
+      damping={0.1}
+    >
+      <StickToBottom.Content>
         <ChatMessages />
       </StickToBottom.Content>
       <ConversationScrollButton />

@@ -148,9 +148,7 @@ const ConversationScrollButton: React.FC = () => {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
 
   const handleScrollToBottom = useCallback(() => {
-    scrollToBottom({
-      duration  : 200,
-    });
+    scrollToBottom();
   }, [scrollToBottom]);
 
   return (
